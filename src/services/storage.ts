@@ -1,5 +1,6 @@
 import { Task, Metric, JournalEntry, Resource, UserProgress, MarketShock } from '../types';
 import { INITIAL_PROGRESS } from '../constants';
+import { get, set } from 'idb-keyval';
 
 const STORAGE_KEYS = {
   TASKS: 'ed_tasks',
@@ -24,8 +25,23 @@ export const storage = {
   getMarketShocks: (): MarketShock[] => JSON.parse(localStorage.getItem(STORAGE_KEYS.MARKET_SHOCKS) || '[]'),
   setMarketShocks: (shocks: MarketShock[]) => localStorage.setItem(STORAGE_KEYS.MARKET_SHOCKS, JSON.stringify(shocks)),
 
-  getResources: (): Resource[] => JSON.parse(localStorage.getItem(STORAGE_KEYS.RESOURCES) || '[]'),
-  setResources: (resources: Resource[]) => localStorage.setItem(STORAGE_KEYS.RESOURCES, JSON.stringify(resources)),
+  // Use IndexedDB for resources to handle large PDF files
+  getResources: async (): Promise<Resource[]> => {
+    try {
+      const resources = await get(STORAGE_KEYS.RESOURCES);
+      return resources || [];
+    } catch (e) {
+      console.error('Failed to get resources from IndexedDB', e);
+      return [];
+    }
+  },
+  setResources: async (resources: Resource[]) => {
+    try {
+      await set(STORAGE_KEYS.RESOURCES, resources);
+    } catch (e) {
+      console.error('Failed to set resources in IndexedDB', e);
+    }
+  },
 
   getProgress: (): UserProgress => JSON.parse(localStorage.getItem(STORAGE_KEYS.PROGRESS) || JSON.stringify(INITIAL_PROGRESS)),
   setProgress: (progress: UserProgress) => localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(progress)),
@@ -33,22 +49,28 @@ export const storage = {
   getTheme: (): 'light' | 'dark' => (localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark') || 'light',
   setTheme: (theme: 'light' | 'dark') => localStorage.setItem(STORAGE_KEYS.THEME, theme),
 
-  exportData: () => {
-    const data: Record<string, string | null> = {};
-    Object.values(STORAGE_KEYS).forEach((key) => {
-      data[key] = localStorage.getItem(key);
-    });
+  exportData: async () => {
+    const data: Record<string, any> = {};
+    for (const key of Object.values(STORAGE_KEYS)) {
+      if (key === STORAGE_KEYS.RESOURCES) {
+        data[key] = await get(key);
+      } else {
+        data[key] = localStorage.getItem(key);
+      }
+    }
     return JSON.stringify(data);
   },
 
-  importData: (jsonString: string) => {
+  importData: async (jsonString: string) => {
     try {
       const data = JSON.parse(jsonString);
-      Object.entries(data).forEach(([key, value]) => {
-        if (typeof value === 'string') {
+      for (const [key, value] of Object.entries(data)) {
+        if (key === STORAGE_KEYS.RESOURCES) {
+          await set(key, value);
+        } else if (typeof value === 'string') {
           localStorage.setItem(key, value);
         }
-      });
+      }
       return true;
     } catch (e) {
       console.error('Failed to import data', e);
