@@ -273,7 +273,7 @@ export default function App() {
     setIsGeneratingMentor(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3-flash-preview";
+      const model = "gemini-2.0-flash";
       const todayTasks = currentTasks.filter(t => isSameDay(parseISO(t.dueDate), new Date()));
       const completedToday = todayTasks.filter(t => t.status === 'Completed').length;
       
@@ -316,7 +316,7 @@ export default function App() {
   const triggerPopQuiz = async () => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3-flash-preview";
+      const model = "gemini-2.0-flash";
       const prompt = `Generate a quick "Pop Quiz" challenge for a B.E.A.T student.
       Current Stage: ${activeStages[progress.currentStageIndex]?.name || 'Graduated'}
       Skill Levels: ${JSON.stringify(progress.skillLevels)}
@@ -356,7 +356,7 @@ export default function App() {
     setIsTriggeringMarketShock(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3-flash-preview";
+      const model = "gemini-2.0-flash";
       const currentStageName = activeStages[progress.currentStageIndex]?.name || 'Graduated';
       const prompt = `Generate a "Market Shock" for a B.E.A.T student.
       Current Stage: ${currentStageName}
@@ -422,7 +422,7 @@ export default function App() {
     setIsResolvingMarketShock(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const model = "gemini-3-flash-preview";
+      const model = "gemini-2.0-flash";
       const shock = marketShocks.find(s => s.id === id);
       if (!shock) return;
 
@@ -1770,7 +1770,7 @@ export default function App() {
       
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-        const model = "gemini-3-flash-preview";
+        const model = "gemini-2.0-flash";
         const prompt = `You are the Dean of the Program. 
         Evaluate this student's Traction Audit for the stage: ${currentStage.name}. 
         They are trying to advance to: ${nextStage?.name || 'Graduation'}.
