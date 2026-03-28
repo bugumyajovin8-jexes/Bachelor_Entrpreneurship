@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { BackupManager } from './components/BackupManager';
+import { RailwayMap } from './components/RailwayMap';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -55,7 +56,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import { storage } from './services/storage';
 import { Task, Metric, JournalEntry, Resource, UserProgress, TaskCategory, MarketShock } from './types';
-import { MOTIVATIONAL_QUOTES, LIFECYCLE_STAGES, INITIAL_PROGRESS, HARD_TRUTHS, DEFAULT_METRICS } from './constants';
+import { MOTIVATIONAL_QUOTES, STARTUP_STAGES, BEAT_STAGES, INITIAL_PROGRESS, HARD_TRUTHS, DEFAULT_METRICS } from './constants';
 
 // --- Components ---
 
@@ -82,34 +83,34 @@ const ProgressBar = ({ progress, label, subLabel }: { progress: number; label: s
   </div>
 );
 
-const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (tab: any) => void }) => (
+const Sidebar = ({ activeTab, setActiveTab, roadmapMode, onToggleRoadmapMode }: { activeTab: string; setActiveTab: (tab: any) => void; roadmapMode: 'Startup' | 'BEAT'; onToggleRoadmapMode: () => void }) => (
   <aside className="hidden md:flex flex-col w-72 bg-white dark:bg-zinc-950 border-r border-zinc-100 dark:border-zinc-900 h-screen sticky top-0 z-40 overflow-y-auto no-scrollbar">
     <div className="p-8">
       <div className="flex items-center gap-3 mb-12">
         <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none">
-          <GraduationCap size={28} />
+          {roadmapMode === 'BEAT' ? <GraduationCap size={28} /> : <Target size={28} />}
         </div>
         <div className="flex flex-col gap-1">
           <h1 className="font-black text-sm tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight">
-            The Crucible Institute of Entrepreneurship & Technology
+            {roadmapMode === 'BEAT' ? 'Crucible Institute of Entrepreneurship and Innovation' : 'Crucible Accelerator'}
           </h1>
           <div className="flex items-center gap-1 opacity-70">
-            <span className="font-black text-[10px] tracking-widest dark:text-white uppercase">Startup</span>
-            <span className="font-black text-[10px] tracking-widest text-indigo-600 uppercase">College</span>
+            <span className="font-black text-[10px] tracking-widest dark:text-white uppercase">{roadmapMode === 'BEAT' ? 'B.E.A.T' : 'STARTUP'}</span>
+            <span className="font-black text-[10px] tracking-widest text-indigo-600 uppercase">{roadmapMode === 'BEAT' ? 'College' : 'FOUNDER'}</span>
           </div>
           <p className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider mt-1 leading-snug border-l-2 border-indigo-500 pl-2">
-            Bachelor in Entrepreneurship & Applied Technology <span className="text-indigo-600 dark:text-indigo-400">(B.E.A.T)</span>
+            {roadmapMode === 'BEAT' ? 'Bachelor in Entrepreneurship & Applied Technology' : 'Mastering the Art of the Lean Startup'}
           </p>
         </div>
       </div>
       
       <div className="space-y-8">
         <div>
-          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-4 ml-4">Main Campus</p>
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-4 ml-4">{roadmapMode === 'BEAT' ? 'Main Campus' : 'Headquarters'}</p>
           <nav className="space-y-1">
-            <SidebarItem icon={LayoutDashboard} label="Campus Center" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-            <SidebarItem icon={CheckSquare} label="Curriculum" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
-            <SidebarItem icon={BarChart3} label="Performance" active={activeTab === 'metrics'} onClick={() => setActiveTab('metrics')} />
+            <SidebarItem icon={LayoutDashboard} label={roadmapMode === 'BEAT' ? 'Campus Center' : 'Command Center'} active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+            <SidebarItem icon={CheckSquare} label={roadmapMode === 'BEAT' ? 'Curriculum' : 'Mission Control'} active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
+            <SidebarItem icon={BarChart3} label={roadmapMode === 'BEAT' ? 'Performance' : 'Growth Metrics'} active={activeTab === 'metrics'} onClick={() => setActiveTab('metrics')} />
           </nav>
         </div>
 
@@ -118,13 +119,22 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab:
           <nav className="space-y-1">
             <SidebarItem icon={BookOpen} label="Journal" active={activeTab === 'journal'} onClick={() => setActiveTab('journal')} />
             <SidebarItem icon={Library} label="Library" active={activeTab === 'resources'} onClick={() => setActiveTab('resources')} />
-            <SidebarItem icon={GraduationCap} label="Degree Progress" active={activeTab === 'progress'} onClick={() => setActiveTab('progress')} />
+            <SidebarItem icon={GraduationCap} label={roadmapMode === 'BEAT' ? 'Degree Progress' : 'Startup Roadmap'} active={activeTab === 'progress'} onClick={() => setActiveTab('progress')} />
             <SidebarItem icon={ShieldAlert} label="War Room" active={activeTab === 'warroom'} onClick={() => setActiveTab('warroom')} />
           </nav>
         </div>
         <div>
           <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-4 ml-4">System</p>
-          <BackupManager />
+          <div className="space-y-2">
+            <BackupManager />
+            <button 
+              onClick={onToggleRoadmapMode}
+              className="flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200 transition-all duration-300"
+            >
+              <Zap size={20} />
+              <span className="text-sm font-bold tracking-tight">Switch to {roadmapMode === 'BEAT' ? 'Startup' : 'B.E.A.T'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -136,15 +146,15 @@ const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab:
             JD
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-black dark:text-white truncate tracking-tight">Founder #829</p>
-            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Year 1 Student</p>
+            <p className="text-sm font-black dark:text-white truncate tracking-tight">{roadmapMode === 'BEAT' ? 'B.E.A.T Scholar' : 'Startup Founder'}</p>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">{roadmapMode === 'BEAT' ? 'Year 1 Student' : 'Early Stage'}</p>
           </div>
         </div>
         <div className="space-y-2">
           <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
             <div className="h-full bg-indigo-600 w-2/3 rounded-full" />
           </div>
-          <p className="text-[9px] text-zinc-400 font-bold text-right uppercase tracking-widest">65% to Sophomore</p>
+          <p className="text-[9px] text-zinc-400 font-bold text-right uppercase tracking-widest">{roadmapMode === 'BEAT' ? '65% to Sophomore' : '65% to Ramen Profitable'}</p>
         </div>
       </div>
     </div>
@@ -205,7 +215,7 @@ export default function App() {
   });
   const [theme, setTheme] = useState<'light' | 'dark'>(storage.getTheme());
   const [quote, setQuote] = useState("");
-  const [mentorMessage, setMentorMessage] = useState<string>("Welcome back, Founder. The Dean is watching. Let's get to work.");
+  const [mentorMessage, setMentorMessage] = useState<string>("Welcome back, Scholar. The Dean is watching. Let's get to work.");
   const [isGeneratingMentor, setIsGeneratingMentor] = useState(false);
   const [showPopQuiz, setShowPopQuiz] = useState(false);
   const [activePopQuiz, setActivePopQuiz] = useState<{ title: string; challenge: string; reward: number } | null>(null);
@@ -216,6 +226,11 @@ export default function App() {
   const [showJournalModal, setShowJournalModal] = useState(false);
   const [showResourceModal, setShowResourceModal] = useState(false);
   const [showTractionAuditModal, setShowTractionAuditModal] = useState(false);
+  const [showRailwayMap, setShowRailwayMap] = useState(false);
+
+  const activeStages = useMemo(() => {
+    return progress.roadmapMode === 'BEAT' ? BEAT_STAGES : STARTUP_STAGES;
+  }, [progress.roadmapMode]);
   const [isTriggeringMarketShock, setIsTriggeringMarketShock] = useState(false);
 
   useEffect(() => {
@@ -265,25 +280,25 @@ export default function App() {
       const rgaTasks = currentTasks.filter(t => t.leverage === 'RGA').length;
       const supportTasks = currentTasks.filter(t => t.leverage === 'Support').length;
 
-      const prompt = `You are the 'Dean of the Board', an outcome-obsessed, ruthless, and highly experienced startup board member and mentor at "The Crucible Institute of Entrepreneurship and Technology".
-      The user is a solo founder in the "${currentProgress.status}" stage. 
+      const prompt = `You are the 'Dean of the Entrepreneurship and Innovation Program', an outcome-obsessed, ruthless, and highly experienced academic and project mentor at "The Crucible Institute of Entrepreneurship and Innovation".
+      The user is a student in the "${currentProgress.status}" stage. 
       Current Stats: 
       - Streak: ${currentProgress.streak}
-      - MRR: $${currentProgress.mrr}
-      - Burn Rate: $${currentProgress.burnRate}
-      - Runway: ${currentProgress.runwayDays} days
-      - Valuation: $${currentProgress.companyValuation}
+      - Project Funding: $${currentProgress.mrr}
+      - Expenses: $${currentProgress.burnRate}
+      - Financial Runway: ${currentProgress.runwayDays} days
+      - Academic & Project Value: $${currentProgress.companyValuation}
       - Status: ${currentProgress.status}
-      - Tasks Today: ${completedToday}/${todayTasks.length}
-      - Pressure Gauge: ${progress.pressure}%
-      - RGA Tasks (Revenue Generating): ${rgaTasks}
-      - Support Tasks (Non-Revenue): ${supportTasks}
+      - Labs Today: ${completedToday}/${todayTasks.length}
+      - Academic Pressure: ${progress.pressure}%
+      - RGA Tasks (Result Generating): ${rgaTasks}
+      - Support Tasks (Non-Result): ${supportTasks}
       
       Rules for your response:
       1. Keep it under 3 sentences. Be punchy, brutal, and direct.
       2. If Support Tasks significantly outnumber RGA tasks, aggressively call them out for "playing house" and avoiding the real work of selling and building.
       3. If Runway is under 30 days, panic them.
-      4. If MRR > Burn Rate, give a brief nod of respect but tell them to scale.
+      4. If Project Funding > Expenses, give a brief nod of respect but tell them to scale.
       5. If Pressure is > 70%, tell them burnout is a choice and they need to clear their desk.`;
 
       const response = await ai.models.generateContent({
@@ -302,12 +317,12 @@ export default function App() {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
       const model = "gemini-3-flash-preview";
-      const prompt = `Generate a quick "Pop Quiz" challenge for a startup founder student.
-      Current Stage: ${LIFECYCLE_STAGES[progress.currentStageIndex]?.name || 'Graduated'}
+      const prompt = `Generate a quick "Pop Quiz" challenge for a B.E.A.T student.
+      Current Stage: ${activeStages[progress.currentStageIndex]?.name || 'Graduated'}
       Skill Levels: ${JSON.stringify(progress.skillLevels)}
       Active Tasks: ${JSON.stringify(tasks.filter(t => t.status === 'Pending').map(t => t.title))}
       
-      The challenge should be a small, actionable task they can do right now to improve their startup.
+      The challenge should be a small, actionable task they can do right now to improve their project.
       Respond in JSON format:
       {
         "title": "string (catchy title)",
@@ -342,17 +357,17 @@ export default function App() {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
       const model = "gemini-3-flash-preview";
-      const currentStageName = LIFECYCLE_STAGES[progress.currentStageIndex]?.name || 'Graduated';
-      const prompt = `Generate a "Market Shock" for a startup founder.
+      const currentStageName = activeStages[progress.currentStageIndex]?.name || 'Graduated';
+      const prompt = `Generate a "Market Shock" for a B.E.A.T student.
       Current Stage: ${currentStageName}
       
       The shock MUST be specific to their current lifecycle stage.
       Examples:
-      - "The Wilderness": Zero Interest (no one cares about the product), Co-founder conflict, Running out of personal savings.
+      - "The Wilderness": Zero Interest (no one cares about the project), Team conflict, Running out of personal savings.
       - "Ramen Profitable": Churn Spike, Server Meltdown from unexpected traffic, Key early employee quits.
-      - "The Scale-Up": Competitor raises $50M, VCs pull term sheet, Mass outage affecting enterprise clients.
+      - "The Scale-Up": Major sponsor pulls out, Legal threat, Expenses spiral out of control.
       
-      The shock should force the founder to defend a pivot or major strategic decision to the Board.
+      The shock should force the student to defend a pivot or major strategic decision to the Dean.
       Respond in JSON format:
       {
         "title": "string (urgent title)",
@@ -411,20 +426,20 @@ export default function App() {
       const shock = marketShocks.find(s => s.id === id);
       if (!shock) return;
 
-      const prompt = `Evaluate a startup founder's pivot/response to a Market Shock, acting as the "Dean of the Board".
+      const prompt = `Evaluate a student's pivot/response to a Market Shock, acting as the "Dean of the Entrepreneurship and Innovation Program".
       Market Shock Title: ${shock.title}
       Shock Description: ${shock.description}
-      Founder's Pivot/Response: "${plan}"
+      Student's Pivot/Response: "${plan}"
       
       Criteria:
       1. Is the pivot decisive and actionable?
       2. Does it address the root cause of the market shock?
-      3. Is it realistic for a startup?
+      3. Is it realistic for a student project?
       
       Respond in JSON format:
       {
         "score": number (0 to 100),
-        "feedback": "string (brutal but fair feedback from the Board)",
+        "feedback": "string (brutal but fair feedback from the Dean)",
         "resilienceGain": number (0 to 20)
       }`;
 
@@ -449,7 +464,7 @@ export default function App() {
         resilienceScore: (progress.resilienceScore || 0) + evaluation.resilienceGain
       });
       
-      setMentorMessage(`BOARD DECISION: ${evaluation.feedback}`);
+      setMentorMessage(`DEAN'S EVALUATION: ${evaluation.feedback}`);
       setShowMarketShockModal(false);
       setActiveMarketShock(null);
     } catch (error) {
@@ -567,24 +582,6 @@ export default function App() {
         const isRGA = t.leverage === 'RGA';
         const pointsEarned = isRGA ? Math.round(t.points * progress.difficultyMultiplier * 100) : 0;
         
-        // --- Brutal Reality Logic ---
-        // 1. Market Rejection: 20% chance to get 0 valuation for the effort (only for RGA)
-        const marketRejection = isRGA && Math.random() < 0.2;
-        
-        // 2. Burnout Penalty: If pressure > 50, valuation yield is halved
-        const burnoutPenalty = progress.pressure > 50 ? 0.5 : 1.0;
-
-        // 3. Hard MRR Yield: 1 MRR per 1000 points
-        const mrrYield = marketRejection ? 0 : (pointsEarned / 1000) * burnoutPenalty;
-
-        if (marketRejection) {
-          setMentorMessage("The market rejected your effort. You did the work, but it didn't land. No MRR earned. Welcome to entrepreneurship.");
-        } else if (burnoutPenalty < 1.0) {
-          setMentorMessage("Your pressure is overwhelming. You're working at half-efficiency. Clear your desk or keep failing.");
-        } else if (!isRGA) {
-          setMentorMessage("Support task completed. Pressure reduced. You're clearing the path for growth.");
-        }
-
         // Skill Leveling
         const newSkillLevels = { ...progress.skillLevels };
         const category = t.category as keyof typeof newSkillLevels;
@@ -597,8 +594,7 @@ export default function App() {
 
         const newProgress = { 
           ...progress, 
-          companyValuation: progress.companyValuation + (marketRejection ? 0 : pointsEarned),
-          mrr: Number((progress.mrr + mrrYield).toFixed(2)),
+          progressPercentage: Math.min(100, progress.progressPercentage + 1),
           skillLevels: newSkillLevels,
           pressure: Math.max(0, progress.pressure - pressureReduction)
         };
@@ -613,26 +609,20 @@ export default function App() {
   const handleMicroTaskToggle = (taskId: string, microId: string) => {
     const updatedTasks = tasks.map(t => {
       if (t.id === taskId && t.microTasks) {
-        const isRGA = t.leverage === 'RGA';
         const updatedMicro = t.microTasks.map(m => {
           if (m.id === microId) {
             const newCompleted = !m.completed;
             if (newCompleted) {
-              // Microtasks give even fewer MRR (1/2000th of points)
-              const mrrYield = isRGA ? Number((m.points / 20).toFixed(2)) : 0;
               updateProgress({
                 ...progress,
-                companyValuation: progress.companyValuation + (isRGA ? m.points * 10 : 0),
-                mrr: Number((progress.mrr + mrrYield).toFixed(2)),
-                pressure: Math.max(0, progress.pressure - (isRGA ? 1 : 3))
+                progressPercentage: Math.min(100, progress.progressPercentage + 0.5),
+                pressure: Math.max(0, progress.pressure - 1)
               });
             } else {
-              const mrrYield = isRGA ? Number((m.points / 20).toFixed(2)) : 0;
               updateProgress({
                 ...progress,
-                companyValuation: progress.companyValuation - (isRGA ? m.points * 10 : 0),
-                mrr: Number((progress.mrr - mrrYield).toFixed(2)),
-                pressure: Math.min(100, progress.pressure + (isRGA ? 1 : 3))
+                progressPercentage: Math.max(0, progress.progressPercentage - 0.5),
+                pressure: Math.min(100, progress.pressure + 1)
               });
             }
             return { ...m, completed: newCompleted };
@@ -652,6 +642,15 @@ export default function App() {
 
   // --- Views ---
 
+  const getCurrentLevel = () => {
+    const stage = activeStages[progress.currentStageIndex];
+    const phase = stage.phases.find(p => p.levels.some(l => !progress.completedLevels.includes(l.id)));
+    const level = phase?.levels.find(l => !progress.completedLevels.includes(l.id));
+    return { stage: stage.name, phase: phase?.name || 'Completed', level: level?.title || 'Completed' };
+  };
+
+  const currentLevel = getCurrentLevel();
+
   const DashboardView = () => {
     const todayTasks = tasks.filter(t => isSameDay(parseISO(t.dueDate), new Date()));
     const completedToday = todayTasks.filter(t => t.status === 'Completed').length;
@@ -666,8 +665,14 @@ export default function App() {
               <LayoutDashboard size={24} />
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white md:text-4xl">CEO Command Center</h1>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">{format(new Date(), 'EEEE, MMMM do')}</p>
+              <h1 className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white md:text-4xl">Entrepreneurship and Innovation Student Dashboard</h1>
+              <button 
+                onClick={() => setShowRailwayMap(true)}
+                className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-sm font-bold mt-1 hover:underline"
+              >
+                {currentLevel.stage} • {currentLevel.phase} • {currentLevel.level}
+                <ChevronRight size={16} />
+              </button>
             </div>
           </div>
           <div className="flex gap-3">
@@ -700,10 +705,10 @@ export default function App() {
                     <TrendingUp size={24} className="text-indigo-400" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 text-indigo-300">Monthly Revenue</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 text-indigo-300">Project Funding</p>
                     <div className="flex items-center gap-4">
-                      <h4 className="text-3xl font-black tracking-tighter">${progress.mrr.toLocaleString()}</h4>
-                      <div className="text-[9px] font-black bg-white/10 px-2 py-1 rounded-lg uppercase tracking-widest">MRR</div>
+                      <h4 className="text-3xl font-black tracking-tighter">{progress.mrr.toLocaleString()} TZS</h4>
+                      <div className="text-[9px] font-black bg-white/10 px-2 py-1 rounded-lg uppercase tracking-widest">FUNDING</div>
                     </div>
                   </div>
                 </div>
@@ -712,7 +717,7 @@ export default function App() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Clock size={18} className="text-red-500" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Survival Runway</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Financial Runway</p>
                   </div>
                   <span className="text-xs font-black text-zinc-900 dark:text-white">{progress.runwayDays} Days</span>
                 </div>
@@ -730,7 +735,7 @@ export default function App() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Flame size={14} className="text-orange-500" />
-                      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Pressure Gauge</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Academic Pressure</p>
                     </div>
                     <span className="text-[10px] font-black text-zinc-900 dark:text-white">{progress.pressure}%</span>
                   </div>
@@ -754,16 +759,16 @@ export default function App() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Zap size={18} className="text-orange-500" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Burn Rate vs MRR</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Expenses vs Funding</p>
                   </div>
-                  <span className="text-xs font-black text-zinc-900 dark:text-white">Net: ${Math.max(0, progress.burnRate - progress.mrr).toLocaleString()}/mo</span>
+                  <span className="text-xs font-black text-zinc-900 dark:text-white">Net: {Math.max(0, progress.burnRate - progress.mrr).toLocaleString()} TZS/mo</span>
                 </div>
                 
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-2">
-                      <span className="text-red-500">Burn (${progress.burnRate.toLocaleString()})</span>
-                      <span className="text-indigo-500">MRR (${progress.mrr.toLocaleString()})</span>
+                      <span className="text-red-500">Expenses ({progress.burnRate.toLocaleString()} TZS)</span>
+                      <span className="text-indigo-500">Funding ({progress.mrr.toLocaleString()} TZS)</span>
                     </div>
                     <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden flex">
                       <motion.div 
@@ -785,9 +790,9 @@ export default function App() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <TrendingUp size={18} className="text-emerald-500" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Valuation Index</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Academic & Project Value</p>
                   </div>
-                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">${progress.companyValuation.toLocaleString()}</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">{progress.companyValuation.toLocaleString()} TZS</span>
                 </div>
                 <div className="h-24 w-full -ml-4">
                   <ResponsiveContainer width="100%" height="100%">
@@ -820,8 +825,8 @@ export default function App() {
                   <AlertTriangle size={32} />
                 </div>
                 <div>
-                  <p className="font-black text-lg uppercase tracking-widest">Founder Expelled</p>
-                  <p className="text-sm opacity-90 font-medium max-w-md">Your runway has hit zero. You have been expelled from The Crucible Institute of Entrepreneurship and Technology. The market has no mercy for those who cannot sustain themselves.</p>
+                  <p className="font-black text-lg uppercase tracking-widest">Student Expelled</p>
+                  <p className="text-sm opacity-90 font-medium max-w-md">Your financial runway has hit zero. You have been expelled from The Crucible Institute of Entrepreneurship and Innovation. The market has no mercy for those who cannot sustain themselves.</p>
                 </div>
               </motion.div>
             )}
@@ -854,7 +859,7 @@ export default function App() {
                   <div className="flex-1 text-center md:text-left">
                     <div className="flex items-center justify-center md:justify-start gap-2 mb-2 opacity-60">
                       <Zap size={12} className="fill-current text-amber-400" />
-                      <span className="text-[9px] font-black uppercase tracking-[0.3em]">Virtual Dean's Daily Briefing</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.3em]">Dean's Daily Briefing</span>
                     </div>
                     <p className="text-lg md:text-xl font-serif italic leading-relaxed text-zinc-100">
                       {isGeneratingMentor ? (
@@ -925,7 +930,7 @@ export default function App() {
                 </div>
                 <div>
                   <p className="text-4xl font-black dark:text-white tracking-tighter">${progress.companyValuation.toLocaleString()}</p>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black mt-1">Valuation</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black mt-1">Total Value</p>
                 </div>
               </Card>
               <Card className="flex flex-col justify-between p-6 rounded-[2rem] border-none bg-white dark:bg-zinc-900 shadow-lg shadow-zinc-100 dark:shadow-none">
@@ -969,9 +974,9 @@ export default function App() {
               </h3>
               <div className="space-y-6">
                 <ProgressBar 
-                  progress={((Math.min(progress.currentStageIndex, LIFECYCLE_STAGES.length - 1) + 1) / LIFECYCLE_STAGES.length) * 100} 
-                  label={LIFECYCLE_STAGES[progress.currentStageIndex]?.name || 'Graduated'} 
-                  subLabel={`Stage ${Math.min(progress.currentStageIndex + 1, LIFECYCLE_STAGES.length)} of ${LIFECYCLE_STAGES.length}`}
+                  progress={((Math.min(progress.currentStageIndex, activeStages.length - 1) + 1) / activeStages.length) * 100} 
+                  label={activeStages[progress.currentStageIndex]?.name || 'Graduated'} 
+                  subLabel={`Stage ${Math.min(progress.currentStageIndex + 1, activeStages.length)} of ${activeStages.length}`}
                 />
                 <div className="pt-4 border-t border-zinc-50 dark:border-zinc-800 flex justify-between items-center">
                   <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">GPA Equivalent</span>
@@ -1234,7 +1239,7 @@ export default function App() {
         <header className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white md:text-4xl">Performance</h1>
-            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Tracking your startup's vital signs</p>
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Tracking your project's vital signs</p>
           </div>
           <button 
             onClick={() => setShowMetricModal(true)}
@@ -1533,15 +1538,15 @@ export default function App() {
   };
 
   const requestTractionAudit = () => {
-    const currentStage = LIFECYCLE_STAGES[progress.currentStageIndex];
+    const currentStage = activeStages[progress.currentStageIndex];
     if (currentStage && progress.mrr >= currentStage.mrrTarget) {
       setShowTractionAuditModal(true);
     }
   };
 
   const ProgressView = () => {
-    const currentStage = LIFECYCLE_STAGES[progress.currentStageIndex];
-    const nextStage = LIFECYCLE_STAGES[progress.currentStageIndex + 1];
+    const currentStage = activeStages[progress.currentStageIndex];
+    const nextStage = activeStages[progress.currentStageIndex + 1];
     const mrrNeeded = currentStage?.mrrTarget || 0;
     const canAdvance = progress.mrr >= mrrNeeded && nextStage !== undefined;
 
@@ -1549,11 +1554,43 @@ export default function App() {
       <div className="space-y-8 pb-20">
         <header>
           <h1 className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white md:text-4xl">Lifecycle Roadmap</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Stage {Math.min(progress.currentStageIndex + 1, LIFECYCLE_STAGES.length)} of {LIFECYCLE_STAGES.length} • {progress.status}</p>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Stage {Math.min(progress.currentStageIndex + 1, activeStages.length)} of {activeStages.length} • {progress.status}</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            <Card className="p-8 rounded-[2.5rem] border-none shadow-xl shadow-zinc-100 dark:shadow-none bg-white dark:bg-zinc-900">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-8">Manage Finances</h3>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Update Project Funding (TZS)</label>
+                  <input 
+                    type="number" 
+                    value={progress.mrr} 
+                    onChange={(e) => updateProgress({...progress, mrr: Number(e.target.value)})}
+                    className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Update Academic Value (TZS)</label>
+                  <input 
+                    type="number" 
+                    value={progress.companyValuation} 
+                    onChange={(e) => updateProgress({...progress, companyValuation: Number(e.target.value)})}
+                    className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Update Expenses (TZS)</label>
+                  <input 
+                    type="number" 
+                    value={progress.burnRate} 
+                    onChange={(e) => updateProgress({...progress, burnRate: Number(e.target.value)})}
+                    className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                  />
+                </div>
+              </div>
+            </Card>
             <Card className="bg-zinc-900 text-white border-none p-10 rounded-[2.5rem] relative overflow-hidden shadow-2xl">
               <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-600/20 blur-[100px] -translate-y-1/2 translate-x-1/2" />
               
@@ -1586,7 +1623,7 @@ export default function App() {
                     />
                   </div>
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
-                    <span>${progress.mrr.toLocaleString()} MRR / ${mrrNeeded.toLocaleString()} Target</span>
+                    <span>${progress.mrr.toLocaleString()} Funding / ${mrrNeeded.toLocaleString()} Target</span>
                     <span>Runway: {progress.runwayDays} Days</span>
                   </div>
                 </div>
@@ -1610,7 +1647,7 @@ export default function App() {
             <div className="space-y-4">
               <h3 className="text-xs font-black dark:text-white uppercase tracking-[0.2em] text-zinc-400 ml-4">Curriculum Roadmap</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {LIFECYCLE_STAGES.map((stage, i) => (
+                {activeStages.map((stage, i) => (
                   <div 
                     key={stage.name}
                     className={cn(
@@ -1640,7 +1677,7 @@ export default function App() {
                         {stage.name}
                       </p>
                       <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
-                        Target: ${stage.mrrTarget.toLocaleString()} MRR
+                        Target: ${stage.mrrTarget.toLocaleString()} Funding
                       </p>
                     </div>
                   </div>
@@ -1658,7 +1695,7 @@ export default function App() {
                     <TrendingUp size={24} />
                   </div>
                   <div>
-                    <p className="text-sm font-black dark:text-white tracking-tight">Valuation Index</p>
+                    <p className="text-sm font-black dark:text-white tracking-tight">Academic Value Index</p>
                     <p className="text-2xl font-black text-indigo-600">${progress.companyValuation.toLocaleString()}</p>
                   </div>
                 </div>
@@ -1677,7 +1714,7 @@ export default function App() {
                   </div>
                   <div>
                     <p className="text-sm font-black dark:text-white tracking-tight">Major</p>
-                    <p className="text-sm font-black text-indigo-600 uppercase tracking-widest">Company Operations</p>
+                    <p className="text-sm font-black text-indigo-600 uppercase tracking-widest">Project Operations</p>
                   </div>
                 </div>
               </div>
@@ -1702,7 +1739,7 @@ export default function App() {
                     <div key={i} className="pb-6 border-b border-zinc-50 dark:border-zinc-800 last:border-none last:pb-0">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="text-sm font-black dark:text-white">{entry.stage}</h4>
-                        <span className="text-xs font-black text-emerald-600">Valuation Index +</span>
+                        <span className="text-xs font-black text-emerald-600">Academic Value Index +</span>
                       </div>
                       <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-2">{format(parseISO(entry.date), 'MMMM yyyy')}</p>
                       <p className="text-xs font-serif italic text-zinc-500 dark:text-zinc-400 leading-relaxed">"{entry.deanComment}"</p>
@@ -1728,21 +1765,21 @@ export default function App() {
       e.preventDefault();
       setIsSubmitting(true);
       
-      const currentStage = LIFECYCLE_STAGES[progress.currentStageIndex];
-      const nextStage = LIFECYCLE_STAGES[progress.currentStageIndex + 1];
+      const currentStage = activeStages[progress.currentStageIndex];
+      const nextStage = activeStages[progress.currentStageIndex + 1];
       
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
         const model = "gemini-3-flash-preview";
-        const prompt = `You are the Dean of the Board. 
-        Evaluate this founder's Traction Audit for the stage: ${currentStage.name}. 
+        const prompt = `You are the Dean of the Program. 
+        Evaluate this student's Traction Audit for the stage: ${currentStage.name}. 
         They are trying to advance to: ${nextStage?.name || 'Graduation'}.
         
-        Founder's Reflection: "${feedback}"
+        Student's Reflection: "${feedback}"
         
         Criteria: 
-        1. Does it show real entrepreneurial growth and focus on RGA (Revenue Generating Activities)?
-        2. Is it honest about failures and burn rate?
+        1. Does it show real entrepreneurial growth and focus on RGA (Result Generating Activities)?
+        2. Is it honest about failures and expenses?
         3. Does it have a clear plan for scaling to the next level?
         
         Respond in JSON format:
@@ -1783,7 +1820,7 @@ export default function App() {
       } catch (error) {
         console.error("Audit evaluation failed:", error);
         setAuditResult('passed');
-        setFeedback("The board is unavailable, but your metrics speak for themselves. You pass by default, but don't get comfortable.");
+        setFeedback("The Dean is unavailable, but your metrics speak for themselves. You pass by default, but don't get comfortable.");
         updateProgress({
           ...progress,
           currentStageIndex: progress.currentStageIndex + 1,
@@ -1807,8 +1844,8 @@ export default function App() {
             <div className="space-y-8">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-4xl font-black tracking-tighter dark:text-white">Traction Audit: {LIFECYCLE_STAGES[progress.currentStageIndex]?.name}</h2>
-                  <p className="text-zinc-500 font-medium mt-2">The Dean of the Board is ready for your defense.</p>
+                  <h2 className="text-4xl font-black tracking-tighter dark:text-white">Traction Audit: {activeStages[progress.currentStageIndex]?.name}</h2>
+                  <p className="text-zinc-500 font-medium mt-2">The Dean of the Program is ready for your defense.</p>
                 </div>
                 <div className="p-4 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 rounded-2xl">
                   <GraduationCap size={40} />
@@ -1818,7 +1855,7 @@ export default function App() {
               <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl border border-zinc-100 dark:border-zinc-700">
                 <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4">The Challenge</h4>
                 <p className="text-lg font-serif italic leading-relaxed dark:text-zinc-200">
-                  "To advance to {LIFECYCLE_STAGES[progress.currentStageIndex + 1]?.name || 'the next level'}, you must defend your progress. What was your biggest failure in this stage, and how did it make you a better founder? Be brutally honest. The Dean hates fluff."
+                  "To advance to {activeStages[progress.currentStageIndex + 1]?.name || 'the next level'}, you must defend your progress. What was your biggest failure in this stage, and how did it make you a better student? Be brutally honest. The Dean hates fluff."
                 </p>
               </div>
 
@@ -1992,17 +2029,17 @@ export default function App() {
           <div className="space-y-4">
             <h1 className="text-6xl font-black text-white uppercase tracking-tighter italic leading-none">EXPELLED</h1>
             <p className="text-zinc-500 text-lg leading-relaxed">
-              Your runway hit zero. The market has spoken. You are no longer a student of The Crucible Institute of Entrepreneurship and Technology.
+              Your runway hit zero. The market has spoken. You are no longer a student of The Crucible Institute of Entrepreneurship and Innovation.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl text-left">
-              <span className="text-[10px] text-zinc-600 uppercase tracking-widest block mb-1">Final Valuation</span>
+              <span className="text-[10px] text-zinc-600 uppercase tracking-widest block mb-1">Final Academic Value</span>
               <span className="text-xl font-mono text-white">${progress.companyValuation.toLocaleString()}</span>
             </div>
             <div className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl text-left">
-              <span className="text-[10px] text-zinc-600 uppercase tracking-widest block mb-1">Peak MRR</span>
+              <span className="text-[10px] text-zinc-600 uppercase tracking-widest block mb-1">Peak Funding</span>
               <span className="text-xl font-mono text-white">${progress.mrr.toLocaleString()}</span>
             </div>
           </div>
@@ -2102,7 +2139,7 @@ export default function App() {
                       : "bg-zinc-100 dark:bg-zinc-800 border-transparent text-zinc-500"
                   )}
                 >
-                  RGA (Revenue)
+                  RGA (Result)
                 </button>
                 <button 
                   type="button"
@@ -2358,7 +2395,7 @@ export default function App() {
               {isTriggeringMarketShock ? "PREPARING SHOCK..." : "SIMULATE SHOCK"}
             </button>
             <div className="p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-800">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Valuation</p>
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Academic Value</p>
               <p className="text-xl font-black text-indigo-600 tracking-tighter">${progress.companyValuation.toLocaleString()}</p>
             </div>
           </div>
@@ -2671,7 +2708,7 @@ export default function App() {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white dark:bg-zinc-900 w-full max-w-5xl h-[90vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl"
+          className="bg-white dark:bg-zinc-900 w-full max-w-5xl h-[95vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl"
         >
           <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -2699,9 +2736,20 @@ export default function App() {
     );
   };
 
+  const toggleRoadmapMode = () => {
+    const newMode = progress.roadmapMode === 'BEAT' ? 'Startup' : 'BEAT';
+    updateProgress({ ...progress, roadmapMode: newMode, currentStageIndex: 0, completedLevels: [] });
+    setMentorMessage(`Switching to ${newMode} mode. The Dean has adjusted your curriculum. Don't disappoint.`);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans selection:bg-indigo-100 selection:text-indigo-900 flex">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        roadmapMode={progress.roadmapMode}
+        onToggleRoadmapMode={toggleRoadmapMode}
+      />
       
       <FocusModeOverlay />
       <ExpelledOverlay />
@@ -2747,6 +2795,7 @@ export default function App() {
           {showResourceModal && <ResourceModal />}
           {showMarketShockModal && <MarketShockModal />}
           {showTractionAuditModal && <TractionAuditModal />}
+          {showRailwayMap && <RailwayMap completedLevels={progress.completedLevels} activeStages={activeStages} onClose={() => setShowRailwayMap(false)} />}
         </AnimatePresence>
       </div>
     </div>

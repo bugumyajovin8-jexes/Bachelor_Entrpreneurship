@@ -76,9 +76,9 @@ export interface StageCompletion {
 }
 
 export interface UserProgress {
-  companyValuation: number;
+  companyValuation: number; // Academic & Project Value
   currentStageIndex: number;
-  mrr: number; // Monthly Recurring Revenue
+  mrr: number; // Project Funding
   savings: number; // Personal savings to survive
   burnRate: number; // Personal monthly expenses
   runwayDays: number; // Days of life left
@@ -96,6 +96,9 @@ export interface UserProgress {
   lastFailedAuditAnalysis?: string;
   resilienceScore: number;
   stageHistory: StageCompletion[];
+  progressPercentage: number;
+  completedLevels: string[];
+  roadmapMode: 'Startup' | 'BEAT';
 }
 
 export interface MarketShock {
