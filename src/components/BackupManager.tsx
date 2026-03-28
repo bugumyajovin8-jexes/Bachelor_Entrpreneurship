@@ -5,8 +5,8 @@ import { storage } from '../services/storage';
 export const BackupManager: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
-    const data = storage.exportData();
+  const handleExport = async () => {
+    const data = await storage.exportData();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -21,9 +21,9 @@ export const BackupManager: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const content = e.target?.result as string;
-      if (storage.importData(content)) {
+      if (await storage.importData(content)) {
         alert('Progress restored successfully! The page will now reload.');
         window.location.reload();
       } else {
