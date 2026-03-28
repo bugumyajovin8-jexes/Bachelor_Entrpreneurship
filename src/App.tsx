@@ -237,7 +237,13 @@ export default function App() {
     setTasks(storage.getTasks());
     setMetrics(storage.getMetrics());
     setJournal(storage.getJournal());
-    setResources(storage.getResources());
+    
+    const loadResources = async () => {
+      const res = await storage.getResources();
+      setResources(res);
+    };
+    loadResources();
+
     setMarketShocks(storage.getMarketShocks());
     setQuote(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
     
@@ -508,9 +514,9 @@ export default function App() {
     storage.setJournal(newEntries);
   };
 
-  const saveResources = (newResources: Resource[]) => {
+  const saveResources = async (newResources: Resource[]) => {
     setResources(newResources);
-    storage.setResources(newResources);
+    await storage.setResources(newResources);
   };
 
   const updateProgress = (newProgress: UserProgress) => {
@@ -2704,18 +2710,18 @@ export default function App() {
     if (!viewingPdf || !viewingPdf.fileData) return null;
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4 bg-black/80 backdrop-blur-md">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white dark:bg-zinc-900 w-full max-w-5xl h-[95vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl"
+          className="bg-white dark:bg-zinc-900 w-full h-full sm:h-[95vh] sm:max-w-[95vw] lg:max-w-[1400px] rounded-none sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl"
         >
-          <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+          <div className="p-4 sm:p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-900 z-10">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 rounded-xl">
                 <BookOpen size={20} />
               </div>
-              <h2 className="text-xl font-black dark:text-white tracking-tight">{viewingPdf.title}</h2>
+              <h2 className="text-lg sm:text-xl font-black dark:text-white tracking-tight truncate max-w-[200px] sm:max-w-md">{viewingPdf.title}</h2>
             </div>
             <button 
               onClick={() => setViewingPdf(null)}
@@ -2724,10 +2730,10 @@ export default function App() {
               <Plus size={24} className="rotate-45" />
             </button>
           </div>
-          <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 p-4">
+          <div className="flex-1 bg-zinc-100 dark:bg-zinc-950 p-2 sm:p-4 overflow-hidden">
             <iframe 
               src={viewingPdf.fileData} 
-              className="w-full h-full rounded-xl border-none shadow-inner"
+              className="w-full h-full rounded-none sm:rounded-xl border-none shadow-inner bg-white"
               title={viewingPdf.title}
             />
           </div>
